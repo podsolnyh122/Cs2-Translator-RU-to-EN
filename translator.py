@@ -149,10 +149,20 @@ def main():
 
     print("Running...")
 
+    last_sent_time = 0
+    last_message = ""
+
     with open(LOG_PATH, "r", encoding="utf-8", errors="ignore") as f:
         f.seek(0, os.SEEK_END)
+        last_size = os.path.getsize(LOG_PATH)
 
         while True:
+            current_size = os.path.getsize(LOG_PATH)
+            
+            if current_size < last_size:
+                f.seek(0, os.SEEK_SET)
+                last_size = current_size
+
             line = f.readline()
             if not line:
                 time.sleep(0.05)
@@ -174,7 +184,16 @@ def main():
                         continue
                 
                 if is_active and re.search(r'[а-яА-ЯёЁ]', message):
-                    process_and_translate(message, is_team_chat)
+                    current_time = time.time()
+                    
+                    if current_time - last_sent_time > 0.3 or message != last_message:
+                        process_and_translate(message, is_team_chat)
+                        last_sent_time = current_time
+                        last_message = message
+
+            last_size = current_size
+
+
 
 if __name__ == "__main__":
     main()
